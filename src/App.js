@@ -1,4 +1,5 @@
 import React from 'react';
+import AWS from 'aws-sdk';
 import Auth from '@aws-amplify/auth';
 import awsconfig from './aws-exports';
 
@@ -19,15 +20,32 @@ import {
 
 Auth.configure(awsconfig);
 
+let dynamodb = null;
+let docClient = null;
+
 class App extends React.Component {
   state = {
     title: '',
     description: '',
     tags: ''
   };
-  componentDidMount() {}
+  componentDidMount() {
+    AWS.config.update({
+      region,
+      endpoint,
+      // accessKeyId default can be used while using the downloadable version of DynamoDB.
+      // For security reasons, do notå store AWS Credentials in your files. Use Amazon Cognito instead.
+      accessKeyId,
+      // secretAccessKey default can be used while using the downloadable version of DynamoDB.
+      // For security reasons, do not store AWS Credentials in your files. Use Amazon Cognito instead.
+      secretAccessKey
+    });
 
-  handleInputChange = e => {
+    dynamodb = new AWS.DynamoDB();
+    docClient = new AWS.DynamoDB.DocumentClient();
+  }
+
+  onInputChange = e => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
@@ -45,6 +63,27 @@ class App extends React.Component {
     Auth.signIn(username, password)
       .then(success => console.log('successful sign in'))
       .catch(err => console.log(err));
+  };
+
+  addTopic = () => {
+    var params = {
+      TableName: 'Topic',
+      Item: {
+        id: '001',
+        title: this.state.title,
+        description: this.state.description,
+        tags: ['dog', 'cat']
+      }
+    };
+    docClient.put(params, function(err, data) {
+      if (err) {
+        document.querySelector('textarea').value =
+          'Unable to add item: ' + '\n' + JSON.stringify(err, undefined, 2);
+      } else {
+        document.querySelector('textarea').value =
+          'PutItem succeeded: ' + '\n' + JSON.stringify(data, undefined, 2);
+      }
+    });
   };
 
   render() {
@@ -68,6 +107,9 @@ class App extends React.Component {
         tags:{' '}
         <input name="tags" value={this.tags} onChange={this.onInputChange} />
         <br />
+        <button onClick={this.addTopic}>ADD TOPIC</button>
+        <br />
+        <textarea />
       </div>
     );
   }
