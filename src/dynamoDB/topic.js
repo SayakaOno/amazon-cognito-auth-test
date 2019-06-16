@@ -84,3 +84,32 @@ export const getTopic = (docClient, field) => {
     }
   });
 };
+
+export const updateTopic = (docClient, field) => {
+  var params = {
+    TableName: 'Topic',
+    Key: {
+      id: '001',
+      title: 'question1'
+    },
+    UpdateExpression: 'set comments=:c',
+    ExpressionAttributeValues: {
+      ':c': {
+        username: 'newuser1',
+        text: 'this is the answer',
+        date: 'Jun 15, 2019'
+      }
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  docClient.update(params, function(err, data) {
+    if (err) {
+      document.querySelector('textarea').value =
+        'Unable to update item: ' + '\n' + JSON.stringify(err, undefined, 2);
+    } else {
+      document.querySelector('textarea').value =
+        'UpdateItem succeeded: ' + '\n' + JSON.stringify(data, undefined, 2);
+    }
+  });
+};

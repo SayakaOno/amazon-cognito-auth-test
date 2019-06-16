@@ -17,7 +17,7 @@ import {
   code,
   newPassword
 } from './config';
-import { addTopic, getTopics, getTopic } from './dynamoDB/topic';
+import { addTopic, updateTopic, getTopics, getTopic } from './dynamoDB/topic';
 
 Auth.configure(awsconfig);
 
@@ -95,6 +95,10 @@ class App extends React.Component {
         <br />
         <button onClick={() => addTopic(docClient, title, description)}>
           ADD TOPIC
+        </button>
+        <br />
+        <button onClick={() => updateTopic(docClient, this.textareaForTopic)}>
+          update topic
         </button>
         <br />
         <textarea style={{ width: 300, height: 150 }} />
