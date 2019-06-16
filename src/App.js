@@ -17,6 +17,7 @@ import {
   code,
   newPassword
 } from './config';
+import { addTopic, getTopics, getTopic } from './dynamoDB/topic';
 
 Auth.configure(awsconfig);
 
@@ -24,11 +25,16 @@ let dynamodb = null;
 let docClient = null;
 
 class App extends React.Component {
-  state = {
-    title: '',
-    description: '',
-    tags: ''
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      title: '',
+      description: '',
+      tags: ''
+    };
+    this.textareaForTopic = React.createRef();
+  }
+
   componentDidMount() {
     AWS.config.update({
       region,
@@ -65,28 +71,8 @@ class App extends React.Component {
       .catch(err => console.log(err));
   };
 
-  addTopic = () => {
-    var params = {
-      TableName: 'Topic',
-      Item: {
-        id: '001',
-        title: this.state.title,
-        description: this.state.description,
-        tags: ['dog', 'cat']
-      }
-    };
-    docClient.put(params, function(err, data) {
-      if (err) {
-        document.querySelector('textarea').value =
-          'Unable to add item: ' + '\n' + JSON.stringify(err, undefined, 2);
-      } else {
-        document.querySelector('textarea').value =
-          'PutItem succeeded: ' + '\n' + JSON.stringify(data, undefined, 2);
-      }
-    });
-  };
-
   render() {
+    const { title, description } = this.state;
     return (
       <div className="App">
         <button onClick={this.signUp}>Sign up</button>
@@ -107,9 +93,23 @@ class App extends React.Component {
         tags:{' '}
         <input name="tags" value={this.tags} onChange={this.onInputChange} />
         <br />
-        <button onClick={this.addTopic}>ADD TOPIC</button>
+        <button onClick={() => addTopic(docClient, title, description)}>
+          ADD TOPIC
+        </button>
         <br />
-        <textarea />
+        <textarea style={{ width: 300, height: 150 }} />
+        <br />
+        <button onClick={() => getTopics(docClient, this.textareaForTopic)}>
+          get All Topics
+        </button>
+        <button onClick={() => getTopic(docClient, this.textareaForTopic)}>
+          get Topic
+        </button>
+        <br />
+        <textarea
+          ref={this.textareaForTopic}
+          style={{ width: 450, height: 200 }}
+        />
       </div>
     );
   }
