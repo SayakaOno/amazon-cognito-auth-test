@@ -2,6 +2,7 @@ import React from 'react';
 import AWS from 'aws-sdk';
 import Auth from '@aws-amplify/auth';
 import awsconfig from './aws-exports';
+import * as AmazonCognitoIdentity from 'amazon-cognito-identity-js';
 
 import {
   region,
@@ -23,11 +24,15 @@ Auth.configure(awsconfig);
 
 let dynamodb = null;
 let docClient = null;
+let cognitoUser;
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      email: '',
+      password: '',
+      verificationCode: '',
       title: '',
       description: '',
       tags: ''
@@ -55,27 +60,96 @@ class App extends React.Component {
     this.setState({ [e.target.name]: e.target.value });
   };
 
-  signUp = () => {
-    Auth.signUp({
-      username: username,
-      password: password,
-      attributes: {
-        email: email
-      }
-    });
-  };
-
   signIn = () => {
     Auth.signIn(username, password)
       .then(success => console.log('successful sign in'))
       .catch(err => console.log(err));
   };
 
+  signUp = () => {
+    var poolData = {
+      UserPoolId: user_pool_id, // your user pool id here
+      ClientId: clientId // your app client id here
+    };
+    var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+    var userData = {
+      Username: username, // your username here
+      Pool: userPool
+    };
+
+    var attributeList = [];
+
+    var dataEmail = {
+      Name: 'email',
+      Value: this.state.email // your email here
+    };
+    var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(
+      dataEmail
+    );
+
+    attributeList.push(attributeEmail);
+
+    userPool.signUp(
+      this.state.email,
+      this.state.password, // '!1Password',
+      attributeList,
+      null,
+      function(err, result) {
+        if (err) {
+          console.log(err);
+          alert(err);
+          return;
+        }
+        cognitoUser = result.user;
+        console.log(cognitoUser);
+        console.log('user name is ' + cognitoUser.getUsername());
+      }
+    );
+  };
+
+  confirm = () => {
+    cognitoUser.confirmRegistration(this.state.verificationCode, true, function(
+      err,
+      result
+    ) {
+      if (err) {
+        console.log(err);
+        alert(err);
+        return;
+      }
+      console.log('call result: ' + result);
+    });
+  };
+
   render() {
-    const { title, description } = this.state;
+    const {
+      email,
+      password,
+      verificationCode,
+      title,
+      description
+    } = this.state;
     return (
       <div className="App">
+        email:{' '}
+        <input name="email" value={email} onChange={this.onInputChange} />
+        <br />
+        password:{' '}
+        <input
+          type="password"
+          name="password"
+          value={password}
+          onChange={this.onInputChange}
+        />
+        <br />
         <button onClick={this.signUp}>Sign up</button>
+        <br />
+        <input
+          name="verification-code"
+          value={verificationCode}
+          onChange={e => this.setState({ verificationCode: e.target.value })}
+        />
+        <button onClick={this.confirm}>Confirm</button>
         <br />
         <button onClick={this.signIn}>Sign in</button>
         <br />
