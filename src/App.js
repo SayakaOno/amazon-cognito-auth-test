@@ -73,7 +73,7 @@ class App extends React.Component {
     this.setState({ [e.target.name]: e.target.value });
   };
 
-  signIn = () => {
+  signIn = newUser => {
     let authenticationData = {
       Username: this.state.email, // your username here
       Password: this.state.password // your password here (1234567890)
@@ -87,7 +87,10 @@ class App extends React.Component {
       onSuccess: function(result) {
         let accessToken = result.getAccessToken().getJwtToken();
         let sub = result.getAccessToken().payload.sub;
-        addUser(docClient, sub, username);
+        console.log('signed in!');
+        if (newUser) {
+          addUser(docClient, sub, username);
+        }
       },
       onFailure: function(err) {
         alert(err);
@@ -146,7 +149,6 @@ class App extends React.Component {
   };
 
   render() {
-    console.log(this.state.username);
     const {
       username,
       email,
@@ -180,7 +182,9 @@ class App extends React.Component {
         />
         <button onClick={this.confirm}>Confirm</button>
         <br />
-        <button onClick={this.signIn}>Sign in</button>
+        <button onClick={() => this.signIn(true)}>Sign in (new user)</button>
+        <br />
+        <button onClick={() => this.signIn(false)}>Sign in</button>
         <br />
         <br />
         title:{' '}
