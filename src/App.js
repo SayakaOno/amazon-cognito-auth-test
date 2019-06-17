@@ -24,7 +24,13 @@ Auth.configure(awsconfig);
 
 let dynamodb = null;
 let docClient = null;
-let cognitoUser;
+let cognitoUser = null;
+let poolData = {
+  UserPoolId: user_pool_id, // your user pool id here
+  ClientId: clientId // your app client id here
+};
+let userPool = null;
+let userData = {};
 
 class App extends React.Component {
   constructor(props) {
@@ -54,6 +60,11 @@ class App extends React.Component {
 
     dynamodb = new AWS.DynamoDB();
     docClient = new AWS.DynamoDB.DocumentClient();
+    userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+    userData = {
+      Username: username, // your username here
+      Pool: userPool
+    };
   }
 
   onInputChange = e => {
@@ -61,29 +72,38 @@ class App extends React.Component {
   };
 
   signIn = () => {
-    Auth.signIn(username, password)
-      .then(success => console.log('successful sign in'))
-      .catch(err => console.log(err));
+    let authenticationData = {
+      Username: this.state.email, // your username here
+      Password: this.state.password // your password here (1234567890)
+    };
+    let authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(
+      authenticationData
+    );
+    let cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+    cognitoUser.authenticateUser(authenticationDetails, {
+      onSuccess: function(result) {
+        let accessToken = result.getAccessToken().getJwtToken();
+        console.log(result);
+      },
+      onFailure: function(err) {
+        alert(err);
+        console.log(err);
+      }
+      // mfaRequired: function(codeDeliveryDetails) {
+      //   let verificationCode = prompt('Please input verification code', '');
+      //   cognitoUser.sendMFACode(verificationCode, this);
+      // }
+    });
   };
 
   signUp = () => {
-    var poolData = {
-      UserPoolId: user_pool_id, // your user pool id here
-      ClientId: clientId // your app client id here
-    };
-    var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-    var userData = {
-      Username: username, // your username here
-      Pool: userPool
-    };
+    let attributeList = [];
 
-    var attributeList = [];
-
-    var dataEmail = {
+    let dataEmail = {
       Name: 'email',
       Value: this.state.email // your email here
     };
-    var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(
+    let attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(
       dataEmail
     );
 
@@ -91,7 +111,7 @@ class App extends React.Component {
 
     userPool.signUp(
       this.state.email,
-      this.state.password, // '!1Password',
+      this.state.password,
       attributeList,
       null,
       function(err, result) {
