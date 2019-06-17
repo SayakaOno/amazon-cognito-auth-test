@@ -19,6 +19,7 @@ import {
   newPassword
 } from './config';
 import { addTopic, updateTopic, getTopics, getTopic } from './dynamoDB/topic';
+import { addUser } from './dynamoDB/user';
 
 Auth.configure(awsconfig);
 
@@ -36,6 +37,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      username: '',
       email: '',
       password: '',
       verificationCode: '',
@@ -80,10 +82,12 @@ class App extends React.Component {
       authenticationData
     );
     let cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+    let username = this.state.username;
     cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: function(result) {
         let accessToken = result.getAccessToken().getJwtToken();
-        console.log(result);
+        let sub = result.getAccessToken().payload.sub;
+        addUser(docClient, sub, username);
       },
       onFailure: function(err) {
         alert(err);
@@ -143,6 +147,7 @@ class App extends React.Component {
 
   render() {
     const {
+      username,
       email,
       password,
       verificationCode,
@@ -151,6 +156,9 @@ class App extends React.Component {
     } = this.state;
     return (
       <div className="App">
+        username:{' '}
+        <input name="username" value={username} onChange={this.onInputChange} />
+        <br />
         email:{' '}
         <input name="email" value={email} onChange={this.onInputChange} />
         <br />
