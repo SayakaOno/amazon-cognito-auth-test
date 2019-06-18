@@ -1,5 +1,5 @@
 export const addTopic = (docClient, title, description) => {
-  var params = {
+  let params = {
     TableName: 'Topic',
     Item: {
       id: '001',
@@ -20,7 +20,7 @@ export const addTopic = (docClient, title, description) => {
 };
 
 export const getTopics = (docClient, field) => {
-  var params = {
+  let params = {
     TableName: 'Topic'
     // ProjectionExpression: 'title'
     // FilterExpression: '#yr between :start_yr and :end_yr',
@@ -86,7 +86,7 @@ export const getTopic = (docClient, field) => {
 };
 
 export const updateTopic = (docClient, field) => {
-  var params = {
+  let params = {
     TableName: 'Topic',
     Key: {
       id: '001',
@@ -110,6 +110,32 @@ export const updateTopic = (docClient, field) => {
     } else {
       document.querySelector('textarea').value =
         'UpdateItem succeeded: ' + '\n' + JSON.stringify(data, undefined, 2);
+    }
+  });
+};
+
+export const conditionalDeleteTopic = docClient => {
+  let params = {
+    TableName: 'Topic',
+    Key: {
+      id: '001',
+      title: 'question1'
+    }
+  };
+
+  docClient.delete(params, function(err, data) {
+    if (err) {
+      console.log(
+        'The conditional delete failed: ' +
+          '\n' +
+          JSON.stringify(err, undefined, 2)
+      );
+    } else {
+      console.log(
+        'The conditional delete succeeded: ' +
+          '\n' +
+          JSON.stringify(data, undefined, 2)
+      );
     }
   });
 };

@@ -18,7 +18,13 @@ import {
   code,
   newPassword
 } from './config';
-import { addTopic, updateTopic, getTopics, getTopic } from './dynamoDB/topic';
+import {
+  addTopic,
+  updateTopic,
+  getTopics,
+  getTopic,
+  conditionalDeleteTopic
+} from './dynamoDB/topic';
 import { addUser, deleteUser } from './dynamoDB/user';
 
 Auth.configure(awsconfig);
@@ -226,6 +232,10 @@ class App extends React.Component {
         <br />
         <button onClick={() => addTopic(docClient, title, description)}>
           ADD TOPIC
+        </button>
+        <br />
+        <button onClick={() => conditionalDeleteTopic(docClient)}>
+          DELETE TOPIC
         </button>
         <br />
         <button onClick={() => updateTopic(docClient, this.textareaForTopic)}>
