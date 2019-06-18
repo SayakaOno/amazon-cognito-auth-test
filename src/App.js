@@ -19,7 +19,7 @@ import {
   newPassword
 } from './config';
 import { addTopic, updateTopic, getTopics, getTopic } from './dynamoDB/topic';
-import { addUser } from './dynamoDB/user';
+import { addUser, deleteUser } from './dynamoDB/user';
 
 Auth.configure(awsconfig);
 
@@ -43,7 +43,9 @@ class App extends React.Component {
       verificationCode: '',
       title: '',
       description: '',
-      tags: ''
+      tags: '',
+      cognitoUser: null,
+      userId: ''
     };
     this.textareaForTopic = React.createRef();
   }
@@ -73,6 +75,10 @@ class App extends React.Component {
     this.setState({ [e.target.name]: e.target.value });
   };
 
+  setUserId = userId => {
+    this.setState({ userId: userId });
+  };
+
   signIn = newUser => {
     let authenticationData = {
       Username: this.state.email, // your username here
@@ -82,11 +88,14 @@ class App extends React.Component {
       authenticationData
     );
     let cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+    this.setState({ cognitoUser });
     let username = this.state.username;
+    let setUserId = this.setUserId;
     cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: function(result) {
         let accessToken = result.getAccessToken().getJwtToken();
         let sub = result.getAccessToken().payload.sub;
+        setUserId(sub);
         console.log('signed in!');
         if (newUser) {
           addUser(docClient, sub, username);
@@ -148,6 +157,19 @@ class App extends React.Component {
     });
   };
 
+  deleteUserAccount = () => {
+    let userId = this.state.userId;
+    this.state.cognitoUser.deleteUser(function(err, result) {
+      if (err) {
+        alert(err);
+        return;
+      }
+      deleteUser(userId, docClient);
+
+      console.log('call result: ' + result);
+    });
+  };
+
   render() {
     const {
       username,
@@ -185,6 +207,8 @@ class App extends React.Component {
         <button onClick={() => this.signIn(true)}>Sign in (new user)</button>
         <br />
         <button onClick={() => this.signIn(false)}>Sign in</button>
+        <br />
+        <button onClick={this.deleteUserAccount}>Delete account</button>
         <br />
         <br />
         title:{' '}
