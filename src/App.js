@@ -23,7 +23,8 @@ import {
   updateTopic,
   getTopics,
   getTopic,
-  conditionalDeleteTopic
+  conditionalDeleteTopic,
+  getTopicsByTag
 } from './dynamoDB/topic';
 import { addUser, deleteUser } from './dynamoDB/user';
 
@@ -51,7 +52,8 @@ class App extends React.Component {
       description: '',
       tags: '',
       cognitoUser: null,
-      userId: ''
+      userId: '',
+      targetTag: ''
     };
     this.textareaForTopic = React.createRef();
   }
@@ -183,7 +185,9 @@ class App extends React.Component {
       password,
       verificationCode,
       title,
-      description
+      description,
+      tags,
+      targetTag
     } = this.state;
     return (
       <div className="App">
@@ -230,7 +234,7 @@ class App extends React.Component {
         tags:{' '}
         <input name="tags" value={this.tags} onChange={this.onInputChange} />
         <br />
-        <button onClick={() => addTopic(docClient, title, description)}>
+        <button onClick={() => addTopic(docClient, title, description, tags)}>
           ADD TOPIC
         </button>
         <br />
@@ -249,6 +253,19 @@ class App extends React.Component {
         </button>
         <button onClick={() => getTopic(docClient, this.textareaForTopic)}>
           get Topic
+        </button>
+        <br />
+        <input
+          name="targetTag"
+          value={targetTag}
+          onChange={this.onInputChange}
+        />
+        <button
+          onClick={() =>
+            getTopicsByTag(docClient, this.textareaForTopic, targetTag)
+          }
+        >
+          get Topic by Tag
         </button>
         <br />
         <textarea
