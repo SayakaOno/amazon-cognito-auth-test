@@ -1,11 +1,11 @@
-export const addTopic = (docClient, title, description) => {
+export const addTopic = (docClient, title, description, tags) => {
   let params = {
     TableName: 'Topic',
     Item: {
-      id: '001',
+      id: '002',
       title,
       description,
-      tags: ['dog', 'cat']
+      tags: manipulateTags(tags)
     }
   };
   docClient.put(params, function(err, data) {
@@ -46,12 +46,17 @@ export const getTopics = (docClient, field) => {
       // print all the topics
       console.log('Scan succeeded.');
       let content = [];
-      data.Items.forEach(function(topic) {
-        content.push(topic.title);
+      data.Items.forEach(function(item) {
+        content.push(item);
       });
-      field.current.value = content.map(item => {
-        return item;
-      });
+      field.current.value =
+        'GetItem succeeded: ' + '\n' + JSON.stringify(content, undefined, 2);
+
+      // field.current.value = content.map(item => {
+      //   return `${item.id}, ${item.title}, ${
+      //     item.description
+      //   }, [${item.tags.map(tag => tag)}]`;
+      // });
 
       // continue scanning if we have more topics, because
       // scan can retrieve a maximum of 1MB of data
@@ -69,7 +74,7 @@ export const getTopic = (docClient, field) => {
     TableName: 'Topic',
     Key: {
       id: '001',
-      title: 'question1'
+      title: 'topic2'
       // description: "description",
       // tags: "tags"
     }
@@ -83,6 +88,48 @@ export const getTopic = (docClient, field) => {
         'GetItem succeeded: ' + '\n' + JSON.stringify(data, undefined, 2);
     }
   });
+};
+
+export const getTopicsByTag = (docClient, field, tag) => {
+  let params = {
+    TableName: 'Topic',
+    FilterExpression: 'contains(#tags, :v)',
+    ExpressionAttributeNames: {
+      '#tags': 'tags'
+    },
+    ExpressionAttributeValues: {
+      ':v': tag
+    }
+  };
+
+  console.log('Scanning Topics table.');
+  docClient.scan(params, onScan);
+
+  function onScan(err, data) {
+    if (err) {
+      console.error(
+        'Unable to scan the table. Error JSON:',
+        JSON.stringify(err, null, 2)
+      );
+    } else {
+      // print all the topics
+      console.log('Scan succeeded.');
+      let content = [];
+      data.Items.forEach(function(topic) {
+        content.push(topic);
+      });
+      field.current.value =
+        'GetItem succeeded: ' + '\n' + JSON.stringify(data, undefined, 2);
+
+      // continue scanning if we have more topics, because
+      // scan can retrieve a maximum of 1MB of data
+      if (typeof data.LastEvaluatedKey != 'undefined') {
+        console.log('Scanning for more...');
+        params.ExclusiveStartKey = data.LastEvaluatedKey;
+        docClient.scan(params, onScan);
+      }
+    }
+  }
 };
 
 export const updateTopic = (docClient, field) => {
@@ -138,4 +185,12 @@ export const conditionalDeleteTopic = docClient => {
       );
     }
   });
+};
+
+const manipulateTags = tags => {
+  let tagArray = tags
+    .split(',')
+    .map(tag => tag.trim(' '))
+    .filter(tag => tag.length);
+  return tagArray;
 };
