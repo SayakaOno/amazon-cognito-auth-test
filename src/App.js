@@ -3,6 +3,7 @@ import AWS from 'aws-sdk';
 import Auth from '@aws-amplify/auth';
 import awsconfig from './aws-exports';
 import * as AmazonCognitoIdentity from 'amazon-cognito-identity-js';
+import './App.css';
 
 import {
   region,
@@ -53,9 +54,11 @@ class App extends React.Component {
       tags: '',
       cognitoUser: null,
       userId: '',
-      targetTag: ''
+      targetTag: '',
+      image: ''
     };
     this.textareaForTopic = React.createRef();
+    this.imageRef = React.createRef();
   }
 
   componentDidMount() {
@@ -178,7 +181,30 @@ class App extends React.Component {
     });
   };
 
+  readURL = e => {
+    if (e.target.files && e.target.files[0]) {
+      let reader = new FileReader();
+      let name = e.target.files[0].name;
+      let imageRef = this.imageRef;
+      let thisD = this;
+
+      reader.onload = function(e) {
+        imageRef.current.src = e.target.result;
+        thisD.setState({ image: name });
+      };
+
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  deleteFile = () => {
+    this.imageRef.current.src = '';
+    this.setState({ image: '' });
+  };
+
   render() {
+    console.log(this.imageRef);
+
     const {
       username,
       email,
@@ -272,6 +298,22 @@ class App extends React.Component {
           ref={this.textareaForTopic}
           style={{ width: 450, height: 200 }}
         />
+        <br />
+        <div className="file-input">
+          <label className="file-upload">
+            <input type="file" onChange={this.readURL} />
+            <div>+ Add Image</div>
+          </label>
+          {this.state.image ? (
+            <span className="file-name">
+              <i onClick={this.deleteFile} className="times circle icon" />
+              {this.state.image}
+            </span>
+          ) : null}
+        </div>
+        <div className="topic-image-container">
+          <img className="topic-image" ref={this.imageRef} src="" alt="" />
+        </div>
       </div>
     );
   }
