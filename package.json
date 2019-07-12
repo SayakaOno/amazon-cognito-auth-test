@@ -6,6 +6,7 @@
     "amazon-cognito-identity-js": "^3.0.12",
     "aws-amplify": "^1.1.28",
     "aws-amplify-react": "^2.3.8",
+    "lodash.template": "^4.5.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-scripts": "3.0.1"
